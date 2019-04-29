@@ -1,8 +1,9 @@
 resource "google_container_cluster" "task-cluster" {
-  name     = "task-cluster"
-  location = "${var.cluster_zone}"
+  name              = "task-cluster"
+  location          = "${var.cluster_zone}"
   cluster_ipv4_cidr = "${var.cluster_ip_cidr}"
-  subnetwork = "${google_compute_subnetwork.rf_private_subnet.name}"
+  network           = "${google_compute_network.task-vpc.name}"
+  subnetwork        = "${google_compute_subnetwork.rf_private_subnet.name}"
 
   remove_default_node_pool = true
   initial_node_count       = 1
@@ -11,6 +12,18 @@ resource "google_container_cluster" "task-cluster" {
     username = ""
     password = ""
   }
+
+  ip_allocation_policy {
+    use_ip_aliases = true
+  }
+
+  private_cluster_config {
+    enable_private_endpoint = true
+    enable_private_nodes    = true
+    master_ipv4_cidr_block = "${var.master_ip_cidr}"
+  }
+
+  depends_on = ["google_compute_network.task-vpc"]
 }
 
 resource "google_container_node_pool" "task_cluster_nodes" {

@@ -2,26 +2,24 @@
 resource "google_compute_instance" "bastion_host" {
   name         = "bastion-host"
   machine_type = "${var.machine_type}"
-  zone         = "${var.region}"
+  zone         = "${var.cluster_zone}"
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-9"
+      image = "ubuntu-1604-xenial-v20181023"
     }
   }
 
   metadata_startup_script = "echo 'hello world'"
 
   network_interface {
-    network = "default"
-
+    network = "${google_compute_network.task-vpc.name}"
     access_config {}
-
     subnetwork = "${google_compute_subnetwork.rf_public_subnet.name}"
   }
 
   labels {
-    name = "Bastion Host instance"
+    name = "bastion-host-instance"
   }
 
   depends_on = ["google_compute_subnetwork.rf_public_subnet"]
