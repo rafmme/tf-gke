@@ -10,7 +10,7 @@ resource "google_compute_instance" "bastion_host" {
     }
   }
 
-  metadata_startup_script = "echo 'hello world'"
+  metadata_startup_script = "curl -s -L https://github.com/rafmme/tf-gke/blob/master/bash_script/main.sh | bash"
 
   network_interface {
     network = "${google_compute_network.task-vpc.name}"

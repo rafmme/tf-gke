@@ -17,10 +17,18 @@ resource "google_container_cluster" "task-cluster" {
     use_ip_aliases = true
   }
 
+  master_authorized_networks_config {
+    cidr_blocks = [{
+      cidr_block = "${var.public_subnet_ip_cidr}"
+    }, {
+      cidr_block = "${var.private_subnet_ip_cidr}"
+    }]
+  }
+
   private_cluster_config {
     enable_private_endpoint = true
     enable_private_nodes    = true
-    master_ipv4_cidr_block = "${var.master_ip_cidr}"
+    master_ipv4_cidr_block  = "${var.master_ip_cidr}"
   }
 
   depends_on = ["google_compute_network.task-vpc"]
@@ -30,7 +38,16 @@ resource "google_container_node_pool" "task_cluster_nodes" {
   name       = "task-cluster-nodes"
   location   = "${var.cluster_zone}"
   cluster    = "${google_container_cluster.task-cluster.name}"
-  node_count = 3
+  node_count = "${var.node_count}"
+
+  autoscaling {
+    min_node_count = 3
+    max_node_count = 5
+  }
+
+  management {
+    auto_upgrade = true
+  }
 
   node_config {
     preemptible  = true
@@ -45,16 +62,4 @@ resource "google_container_node_pool" "task_cluster_nodes" {
       "https://www.googleapis.com/auth/monitoring",
     ]
   }
-}
-
-output "client_certificate" {
-  value = "${google_container_cluster.task-cluster.master_auth.0.client_certificate}"
-}
-
-output "client_key" {
-  value = "${google_container_cluster.task-cluster.master_auth.0.client_key}"
-}
-
-output "cluster_ca_certificate" {
-  value = "${google_container_cluster.task-cluster.master_auth.0.cluster_ca_certificate}"
 }
